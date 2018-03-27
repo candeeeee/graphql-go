@@ -1,7 +1,7 @@
 # graphql-go
 
 [![Sourcegraph](https://sourcegraph.com/github.com/qdentity/graphql-go/-/badge.svg)](https://sourcegraph.com/github.com/qdentity/graphql-go?badge)
-[![Build Status](https://semaphoreci.com/api/v1/graph-gophers/graphql-go/branches/master/badge.svg)](https://semaphoreci.com/graph-gophers/graphql-go)
+[![Build Status](https://travis-ci.org/qdentity/graphql-go.svg?branch=master)](https://travis-ci.org/qdentity/graphql-go)
 [![GoDoc](https://godoc.org/github.com/qdentity/graphql-go?status.svg)](https://godoc.org/github.com/qdentity/graphql-go)
 
 ## Status
