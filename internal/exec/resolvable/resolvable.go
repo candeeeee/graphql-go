@@ -9,6 +9,7 @@ import (
 	"github.com/qdentity/graphql-go/internal/common"
 	"github.com/qdentity/graphql-go/internal/exec/packer"
 	"github.com/qdentity/graphql-go/internal/schema"
+	pubquery "github.com/qdentity/graphql-go/query"
 )
 
 type Schema struct {
@@ -34,6 +35,7 @@ type Field struct {
 	MethodIndex int
 	HasContext  bool
 	HasError    bool
+	HasSelected bool
 	ArgsPacker  *packer.StructPacker
 	ValueExec   Resolvable
 	TraceLabel  string
@@ -251,6 +253,7 @@ func (b *execBuilder) makeObjectExec(typeName string, fields schema.FieldList, p
 }
 
 var contextType = reflect.TypeOf((*context.Context)(nil)).Elem()
+var selectedType = reflect.TypeOf([]pubquery.SelectedField(nil))
 var errorType = reflect.TypeOf((*error)(nil)).Elem()
 
 func (b *execBuilder) makeFieldExec(typeName string, f *schema.Field, m reflect.Method, methodIndex int, methodHasReceiver bool) (*Field, error) {
@@ -280,6 +283,11 @@ func (b *execBuilder) makeFieldExec(typeName string, f *schema.Field, m reflect.
 		in = in[1:]
 	}
 
+	hasSelected := len(in) > 0 && in[0] == selectedType
+	if hasSelected {
+		in = in[1:]
+	}
+
 	if len(in) > 0 {
 		return nil, fmt.Errorf("too many parameters")
 	}
@@ -300,6 +308,7 @@ func (b *execBuilder) makeFieldExec(typeName string, f *schema.Field, m reflect.
 		TypeName:    typeName,
 		MethodIndex: methodIndex,
 		HasContext:  hasContext,
+		HasSelected: hasSelected,
 		ArgsPacker:  argsPacker,
 		HasError:    hasError,
 		TraceLabel:  fmt.Sprintf("GraphQL field: %s.%s", typeName, f.Name),

@@ -51,6 +51,7 @@ The method has up to two arguments:
 
 - Optional `context.Context` argument.
 - Mandatory `*struct { ... }` argument if the corresponding GraphQL field has arguments. The names of the struct fields have to be [exported](https://golang.org/ref/spec#Exported_identifiers) and have to match the names of the GraphQL arguments in a non-case-sensitive way.
+- Optional `[]query.SelectedField` argument to receive the tree of selected subfields in the GraphQL query (useful for preloading of database relations)
 
 The method has up to two results:
 

@@ -2,18 +2,40 @@ package graphql_test
 
 import (
 	"context"
+	"reflect"
 	"testing"
 	"time"
 
 	"github.com/qdentity/graphql-go"
 	"github.com/qdentity/graphql-go/example/starwars"
 	"github.com/qdentity/graphql-go/gqltesting"
+	"github.com/qdentity/graphql-go/query"
 )
 
 type helloWorldResolver1 struct{}
 
 func (r *helloWorldResolver1) Hello() string {
 	return "Hello world!"
+}
+
+type selectedFieldsResolver struct {
+	assert func(fields []query.SelectedField)
+}
+
+func (r *selectedFieldsResolver) Do1(fields []query.SelectedField) *helloWorldResolver1 {
+	r.assert(fields)
+	return &helloWorldResolver1{}
+}
+
+func (r *selectedFieldsResolver) Do2(_ context.Context, fields []query.SelectedField) *helloWorldResolver1 {
+	r.assert(fields)
+	return &helloWorldResolver1{}
+}
+
+func (r *selectedFieldsResolver) Do3(_ context.Context, args struct{ Name string },
+	fields []query.SelectedField) *helloWorldResolver1 {
+	r.assert(fields)
+	return &helloWorldResolver1{}
 }
 
 type helloWorldResolver2 struct{}
@@ -105,6 +127,107 @@ func TestHelloWorld(t *testing.T) {
 			ExpectedResult: `
 				{
 					"hello": "Hello world!"
+				}
+			`,
+		},
+	})
+}
+
+func TestSelectedFields(t *testing.T) {
+	gqltesting.RunTests(t, []*gqltesting.Test{
+		{
+			Schema: graphql.MustParseSchema(`
+				schema {
+					query: Query
+				}
+				type Hello {
+					hello: String!
+				}
+				type Query {
+					do1: Hello!
+				}
+			`, &selectedFieldsResolver{
+				assert: func(got []query.SelectedField) {
+					want := []query.SelectedField{
+						{Name: "hello"},
+					}
+					if !reflect.DeepEqual(want, got) {
+						t.Errorf("want %#v, got %#v", want, got)
+					}
+				},
+			}),
+			Query: `
+				{
+					do1 { hello }
+				}
+			`,
+			ExpectedResult: `
+				{
+					"do1": { "hello": "Hello world!" }
+				}
+			`,
+		},
+		{
+			Schema: graphql.MustParseSchema(`
+				schema {
+					query: Query
+				}
+				type Hello {
+					hello: String!
+				}
+				type Query {
+					do2: Hello!
+				}
+			`, &selectedFieldsResolver{
+				assert: func(got []query.SelectedField) {
+					want := []query.SelectedField{
+						{Name: "hello"},
+					}
+					if !reflect.DeepEqual(want, got) {
+						t.Errorf("want %#v, got %#v", want, got)
+					}
+				},
+			}),
+			Query: `
+				{
+					do2 { hello }
+				}
+			`,
+			ExpectedResult: `
+				{
+					"do2": { "hello": "Hello world!" }
+				}
+			`,
+		},
+		{
+			Schema: graphql.MustParseSchema(`
+				schema {
+					query: Query
+				}
+				type Hello {
+					hello: String!
+				}
+				type Query {
+					do3(name: String!): Hello!
+				}
+			`, &selectedFieldsResolver{
+				assert: func(got []query.SelectedField) {
+					want := []query.SelectedField{
+						{Name: "hello"},
+					}
+					if !reflect.DeepEqual(want, got) {
+						t.Errorf("want %#v, got %#v", want, got)
+					}
+				},
+			}),
+			Query: `
+				{
+					do3(name: "") { hello }
+				}
+			`,
+			ExpectedResult: `
+				{
+					"do3": { "hello": "Hello world!" }
 				}
 			`,
 		},

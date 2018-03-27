@@ -14,6 +14,7 @@ import (
 	"github.com/qdentity/graphql-go/internal/query"
 	"github.com/qdentity/graphql-go/internal/schema"
 	"github.com/qdentity/graphql-go/log"
+	pubquery "github.com/qdentity/graphql-go/query"
 	"github.com/qdentity/graphql-go/trace"
 )
 
@@ -142,6 +143,24 @@ func typeOf(tf *selected.TypenameField, resolver reflect.Value) string {
 	return ""
 }
 
+func selectionToSelectedFields(sels []selected.Selection) []pubquery.SelectedField {
+	n := len(sels)
+	if n == 0 {
+		return nil
+	}
+	selectedFields := make([]pubquery.SelectedField, 0, n)
+	for _, sel := range sels {
+		selField, ok := sel.(*selected.SchemaField)
+		if ok {
+			selectedFields = append(selectedFields, pubquery.SelectedField{
+				Name:     selField.Field.Name,
+				Selected: selectionToSelectedFields(selField.Sels),
+			})
+		}
+	}
+	return selectedFields
+}
+
 func execFieldSelection(ctx context.Context, r *Request, f *fieldToExec, path *pathSegment, applyLimiter bool) {
 	if applyLimiter {
 		r.Limiter <- struct{}{}
@@ -179,6 +198,9 @@ func execFieldSelection(ctx context.Context, r *Request, f *fieldToExec, path *p
 		}
 		if f.field.ArgsPacker != nil {
 			in = append(in, f.field.PackedArgs)
+		}
+		if f.field.HasSelected {
+			in = append(in, reflect.ValueOf(selectionToSelectedFields(f.sels)))
 		}
 		callOut := f.resolver.Method(f.field.MethodIndex).Call(in)
 		result = callOut[0]
