@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"strings"
 
+	perrors "github.com/pkg/errors"
 	"github.com/qdentity/graphql-go/internal/common"
 	"github.com/qdentity/graphql-go/internal/exec/packer"
 	"github.com/qdentity/graphql-go/internal/schema"
@@ -152,7 +153,7 @@ func (b *execBuilder) makeExec(t common.Type, resolverType reflect.Type) (Resolv
 
 	if !nonNull {
 		if resolverType.Kind() != reflect.Ptr {
-			return nil, fmt.Errorf("%s is not a pointer", resolverType)
+			return nil, perrors.Errorf("%s is not a pointer", resolverType)
 		}
 		resolverType = resolverType.Elem()
 	}
@@ -166,7 +167,7 @@ func (b *execBuilder) makeExec(t common.Type, resolverType reflect.Type) (Resolv
 
 	case *common.List:
 		if resolverType.Kind() != reflect.Slice {
-			return nil, fmt.Errorf("%s is not a slice", resolverType)
+			return nil, perrors.Errorf("%s is not a slice", resolverType)
 		}
 		e := &List{}
 		if err := b.assignExec(&e.Elem, t.OfType, resolverType.Elem()); err != nil {
@@ -194,7 +195,7 @@ func makeScalarExec(t *schema.Scalar, resolverType reflect.Type) (Resolvable, er
 		implementsType = r.ImplementsGraphQLType(t.Name)
 	}
 	if !implementsType {
-		return nil, fmt.Errorf("can not use %s as %s", resolverType, t.Name)
+		return nil, perrors.Errorf("can not use %s as %s", resolverType, t.Name)
 	}
 	return &Scalar{}, nil
 }
@@ -202,7 +203,7 @@ func makeScalarExec(t *schema.Scalar, resolverType reflect.Type) (Resolvable, er
 func (b *execBuilder) makeObjectExec(typeName string, fields schema.FieldList, possibleTypes []*schema.Object, nonNull bool, resolverType reflect.Type) (*Object, error) {
 	if !nonNull {
 		if resolverType.Kind() != reflect.Ptr && resolverType.Kind() != reflect.Interface {
-			return nil, fmt.Errorf("%s is not a pointer or interface", resolverType)
+			return nil, perrors.Errorf("%s is not a pointer or interface", resolverType)
 		}
 	}
 
@@ -216,13 +217,13 @@ func (b *execBuilder) makeObjectExec(typeName string, fields schema.FieldList, p
 			if findMethod(reflect.PtrTo(resolverType), f.Name) != -1 {
 				hint = " (hint: the method exists on the pointer type)"
 			}
-			return nil, fmt.Errorf("%s does not resolve %q: missing method for field %q%s", resolverType, typeName, f.Name, hint)
+			return nil, perrors.Errorf("%s does not resolve %q: missing method for field %q%s", resolverType, typeName, f.Name, hint)
 		}
 
 		m := resolverType.Method(methodIndex)
 		fe, err := b.makeFieldExec(typeName, f, m, methodIndex, methodHasReceiver)
 		if err != nil {
-			return nil, fmt.Errorf("%s\n\treturned by (%s).%s", err, resolverType, m.Name)
+			return nil, perrors.Errorf("%s\n\treturned by (%s).%s", err, resolverType, m.Name)
 		}
 		Fields[f.Name] = fe
 	}
@@ -231,10 +232,10 @@ func (b *execBuilder) makeObjectExec(typeName string, fields schema.FieldList, p
 	for _, impl := range possibleTypes {
 		methodIndex := findMethod(resolverType, "To"+impl.Name)
 		if methodIndex == -1 {
-			return nil, fmt.Errorf("%s does not resolve %q: missing method %q to convert to %q", resolverType, typeName, "To"+impl.Name, impl.Name)
+			return nil, perrors.Errorf("%s does not resolve %q: missing method %q to convert to %q", resolverType, typeName, "To"+impl.Name, impl.Name)
 		}
 		if resolverType.Method(methodIndex).Type.NumOut() != 2 {
-			return nil, fmt.Errorf("%s does not resolve %q: method %q should return a value and a bool indicating success", resolverType, typeName, "To"+impl.Name)
+			return nil, perrors.Errorf("%s does not resolve %q: method %q should return a value and a bool indicating success", resolverType, typeName, "To"+impl.Name)
 		}
 		a := &TypeAssertion{
 			MethodIndex: methodIndex,
@@ -273,7 +274,7 @@ func (b *execBuilder) makeFieldExec(typeName string, f *schema.Field, m reflect.
 	var argsPacker *packer.StructPacker
 	if len(f.Args) > 0 {
 		if len(in) == 0 {
-			return nil, fmt.Errorf("must have parameter for field arguments")
+			return nil, perrors.Errorf("must have parameter for field arguments")
 		}
 		var err error
 		argsPacker, err = b.packerBuilder.MakeStructPacker(f.Args, in[0])
@@ -289,17 +290,17 @@ func (b *execBuilder) makeFieldExec(typeName string, f *schema.Field, m reflect.
 	}
 
 	if len(in) > 0 {
-		return nil, fmt.Errorf("too many parameters")
+		return nil, perrors.Errorf("too many parameters")
 	}
 
 	if m.Type.NumOut() > 2 {
-		return nil, fmt.Errorf("too many return values")
+		return nil, perrors.Errorf("too many return values")
 	}
 
 	hasError := m.Type.NumOut() == 2
 	if hasError {
 		if m.Type.Out(1) != errorType {
-			return nil, fmt.Errorf(`must have "error" as its second return value`)
+			return nil, perrors.Errorf(`must have "error" as its second return value`)
 		}
 	}
 

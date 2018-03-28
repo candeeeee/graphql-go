@@ -2,10 +2,11 @@ package graphql
 
 import (
 	"context"
-	"fmt"
-
 	"encoding/json"
+	"fmt"
+	"os"
 
+	perrors "github.com/pkg/errors"
 	"github.com/qdentity/graphql-go/errors"
 	"github.com/qdentity/graphql-go/internal/common"
 	"github.com/qdentity/graphql-go/internal/exec"
@@ -52,6 +53,7 @@ func ParseSchema(schemaString string, resolver interface{}, opts ...SchemaOpt) (
 func MustParseSchema(schemaString string, resolver interface{}, opts ...SchemaOpt) *Schema {
 	s, err := ParseSchema(schemaString, resolver, opts...)
 	if err != nil {
+		fmt.Fprintf(os.Stderr, "parse schema error: %+v\n\n", err)
 		panic(err)
 	}
 	return s
@@ -165,12 +167,12 @@ func (s *Schema) exec(ctx context.Context, queryString string, operationName str
 
 func getOperation(document *query.Document, operationName string) (*query.Operation, error) {
 	if len(document.Operations) == 0 {
-		return nil, fmt.Errorf("no operations in query document")
+		return nil, perrors.Errorf("no operations in query document")
 	}
 
 	if operationName == "" {
 		if len(document.Operations) > 1 {
-			return nil, fmt.Errorf("more than one operation in query document and no operation name given")
+			return nil, perrors.Errorf("more than one operation in query document and no operation name given")
 		}
 		for _, op := range document.Operations {
 			return op, nil // return the one and only operation
@@ -179,7 +181,7 @@ func getOperation(document *query.Document, operationName string) (*query.Operat
 
 	op := document.Operations.Get(operationName)
 	if op == nil {
-		return nil, fmt.Errorf("no operation with name %q", operationName)
+		return nil, perrors.Errorf("no operation with name %q", operationName)
 	}
 	return op, nil
 }

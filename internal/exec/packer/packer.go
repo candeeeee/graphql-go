@@ -1,11 +1,11 @@
 package packer
 
 import (
-	"fmt"
 	"math"
 	"reflect"
 	"strings"
 
+	perrors "github.com/pkg/errors"
 	"github.com/qdentity/graphql-go/errors"
 	"github.com/qdentity/graphql-go/internal/common"
 	"github.com/qdentity/graphql-go/internal/schema"
@@ -79,7 +79,7 @@ func (b *Builder) makePacker(schemaType common.Type, reflectType reflect.Type) (
 	t, nonNull := unwrapNonNull(schemaType)
 	if !nonNull {
 		if reflectType.Kind() != reflect.Ptr {
-			return nil, fmt.Errorf("%s is not a pointer", reflectType)
+			return nil, perrors.Errorf("%s is not a pointer", reflectType)
 		}
 		elemType := reflectType.Elem()
 		addPtr := true
@@ -104,7 +104,7 @@ func (b *Builder) makePacker(schemaType common.Type, reflectType reflect.Type) (
 func (b *Builder) makeNonNullPacker(schemaType common.Type, reflectType reflect.Type) (packer, error) {
 	if u, ok := reflect.New(reflectType).Interface().(Unmarshaler); ok {
 		if !u.ImplementsGraphQLType(schemaType.String()) {
-			return nil, fmt.Errorf("can not unmarshal %s into %s", schemaType, reflectType)
+			return nil, perrors.Errorf("can not unmarshal %s into %s", schemaType, reflectType)
 		}
 		return &unmarshalerPacker{
 			ValueType: reflectType,
@@ -120,7 +120,7 @@ func (b *Builder) makeNonNullPacker(schemaType common.Type, reflectType reflect.
 	case *schema.Enum:
 		want := reflect.TypeOf("")
 		if reflectType != want {
-			return nil, fmt.Errorf("wrong type, expected %s", want)
+			return nil, perrors.Errorf("wrong type, expected %s", want)
 		}
 		return &ValuePacker{
 			ValueType: reflectType,
@@ -135,7 +135,7 @@ func (b *Builder) makeNonNullPacker(schemaType common.Type, reflectType reflect.
 
 	case *common.List:
 		if reflectType.Kind() != reflect.Slice {
-			return nil, fmt.Errorf("expected slice, got %s", reflectType)
+			return nil, perrors.Errorf("expected slice, got %s", reflectType)
 		}
 		p := &listPacker{
 			sliceType: reflectType,
@@ -146,7 +146,7 @@ func (b *Builder) makeNonNullPacker(schemaType common.Type, reflectType reflect.
 		return p, nil
 
 	case *schema.Object, *schema.Interface, *schema.Union:
-		return nil, fmt.Errorf("type of kind %s can not be used as input", t.Kind())
+		return nil, perrors.Errorf("type of kind %s can not be used as input", t.Kind())
 
 	default:
 		panic("unreachable")
@@ -161,7 +161,7 @@ func (b *Builder) MakeStructPacker(values common.InputValueList, typ reflect.Typ
 		usePtr = true
 	}
 	if structType.Kind() != reflect.Struct {
-		return nil, fmt.Errorf("expected struct or pointer to struct, got %s", typ)
+		return nil, perrors.Errorf("expected struct or pointer to struct, got %s", typ)
 	}
 
 	var fields []*structPackerField
@@ -173,10 +173,10 @@ func (b *Builder) MakeStructPacker(values common.InputValueList, typ reflect.Typ
 
 		sf, ok := structType.FieldByNameFunc(fx)
 		if !ok {
-			return nil, fmt.Errorf("missing argument %q", v.Name)
+			return nil, perrors.Errorf("missing argument %q", v.Name)
 		}
 		if sf.PkgPath != "" {
-			return nil, fmt.Errorf("field %q must be exported", sf.Name)
+			return nil, perrors.Errorf("field %q must be exported", sf.Name)
 		}
 		fe.fieldIndex = sf.Index
 
@@ -187,7 +187,7 @@ func (b *Builder) MakeStructPacker(values common.InputValueList, typ reflect.Typ
 		}
 
 		if err := b.assignPacker(&fe.fieldPacker, ft, sf.Type); err != nil {
-			return nil, fmt.Errorf("field %q: %s", sf.Name, err)
+			return nil, perrors.Errorf("field %q: %s", sf.Name, err)
 		}
 
 		fields = append(fields, fe)
@@ -296,7 +296,7 @@ func (p *ValuePacker) Pack(value interface{}) (reflect.Value, error) {
 
 	coerced, err := unmarshalInput(p.ValueType, value)
 	if err != nil {
-		return reflect.Value{}, fmt.Errorf("could not unmarshal %#v (%T) into %s: %s", value, value, p.ValueType, err)
+		return reflect.Value{}, perrors.Errorf("could not unmarshal %#v (%T) into %s: %s", value, value, p.ValueType, err)
 	}
 	return reflect.ValueOf(coerced), nil
 }
@@ -332,13 +332,13 @@ func unmarshalInput(typ reflect.Type, input interface{}) (interface{}, error) {
 		switch input := input.(type) {
 		case int:
 			if input < math.MinInt32 || input > math.MaxInt32 {
-				return nil, fmt.Errorf("not a 32-bit integer")
+				return nil, perrors.Errorf("not a 32-bit integer")
 			}
 			return int32(input), nil
 		case float64:
 			coerced := int32(input)
 			if input < math.MinInt32 || input > math.MaxInt32 || float64(coerced) != input {
-				return nil, fmt.Errorf("not a 32-bit integer")
+				return nil, perrors.Errorf("not a 32-bit integer")
 			}
 			return coerced, nil
 		}
@@ -352,7 +352,7 @@ func unmarshalInput(typ reflect.Type, input interface{}) (interface{}, error) {
 		}
 	}
 
-	return nil, fmt.Errorf("incompatible type")
+	return nil, perrors.Errorf("incompatible type")
 }
 
 func unwrapNonNull(t common.Type) (common.Type, bool) {

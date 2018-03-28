@@ -1,10 +1,10 @@
 package selected
 
 import (
-	"fmt"
 	"reflect"
 	"sync"
 
+	perrors "github.com/pkg/errors"
 	"github.com/qdentity/graphql-go/errors"
 	"github.com/qdentity/graphql-go/internal/common"
 	"github.com/qdentity/graphql-go/internal/exec/packer"
@@ -167,7 +167,7 @@ func applyFragment(r *Request, e *resolvable.Object, frag *query.Fragment) []Sel
 	if frag.On.Name != "" && frag.On.Name != e.Name {
 		a, ok := e.TypeAssertions[frag.On.Name]
 		if !ok {
-			panic(fmt.Errorf("%q does not implement %q", frag.On, e.Name)) // TODO proper error handling
+			panic(perrors.Errorf("%q does not implement %q", frag.On, e.Name)) // TODO proper error handling
 		}
 
 		return []Selection{&TypeAssertion{

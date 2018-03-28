@@ -1,8 +1,9 @@
 package graphql
 
 import (
-	"fmt"
 	"time"
+
+	perrors "github.com/pkg/errors"
 )
 
 // Time is a custom GraphQL type to represent an instant in time. It has to be added to a schema
@@ -31,6 +32,6 @@ func (t *Time) UnmarshalGraphQL(input interface{}) error {
 		t.Time = time.Unix(int64(input), 0)
 		return nil
 	default:
-		return fmt.Errorf("wrong type")
+		return perrors.Errorf("wrong type")
 	}
 }

@@ -3,18 +3,17 @@ package relay
 import (
 	"encoding/base64"
 	"encoding/json"
-	"errors"
-	"fmt"
 	"net/http"
 	"strings"
 
-	graphql "github.com/qdentity/graphql-go"
+	perrors "github.com/pkg/errors"
+	"github.com/qdentity/graphql-go"
 )
 
 func MarshalID(kind string, spec interface{}) graphql.ID {
 	d, err := json.Marshal(spec)
 	if err != nil {
-		panic(fmt.Errorf("relay.MarshalID: %s", err))
+		panic(perrors.Errorf("relay.MarshalID: %s", err))
 	}
 	return graphql.ID(base64.URLEncoding.EncodeToString(append([]byte(kind+":"), d...)))
 }
@@ -38,7 +37,7 @@ func UnmarshalSpec(id graphql.ID, v interface{}) error {
 	}
 	i := strings.IndexByte(string(s), ':')
 	if i == -1 {
-		return errors.New("invalid graphql.ID")
+		return perrors.New("invalid graphql.ID")
 	}
 	return json.Unmarshal([]byte(s[i+1:]), v)
 }
