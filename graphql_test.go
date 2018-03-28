@@ -18,6 +18,8 @@ func (r *helloWorldResolver1) Hello() string {
 	return "Hello world!"
 }
 
+type mySelectedFields []query.SelectedField
+
 type selectedFieldsResolver struct {
 	assert func(fields []query.SelectedField)
 }
@@ -34,6 +36,11 @@ func (r *selectedFieldsResolver) Do2(_ context.Context, fields []query.SelectedF
 
 func (r *selectedFieldsResolver) Do3(_ context.Context, args struct{ Name string },
 	fields []query.SelectedField) *helloWorldResolver1 {
+	r.assert(fields)
+	return &helloWorldResolver1{}
+}
+
+func (r *selectedFieldsResolver) Do4(fields mySelectedFields) *helloWorldResolver1 {
 	r.assert(fields)
 	return &helloWorldResolver1{}
 }
@@ -228,6 +235,38 @@ func TestSelectedFields(t *testing.T) {
 			ExpectedResult: `
 				{
 					"do3": { "hello": "Hello world!" }
+				}
+			`,
+		},
+		{
+			Schema: graphql.MustParseSchema(`
+				schema {
+					query: Query
+				}
+				type Hello {
+					hello: String!
+				}
+				type Query {
+					do4: Hello!
+				}
+			`, &selectedFieldsResolver{
+				assert: func(got []query.SelectedField) {
+					want := []query.SelectedField{
+						{Name: "hello"},
+					}
+					if !reflect.DeepEqual(want, got) {
+						t.Errorf("want %#v, got %#v", want, got)
+					}
+				},
+			}),
+			Query: `
+				{
+					do4 { hello }
+				}
+			`,
+			ExpectedResult: `
+				{
+					"do4": { "hello": "Hello world!" }
 				}
 			`,
 		},

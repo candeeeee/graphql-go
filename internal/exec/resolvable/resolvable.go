@@ -254,7 +254,7 @@ func (b *execBuilder) makeObjectExec(typeName string, fields schema.FieldList, p
 }
 
 var contextType = reflect.TypeOf((*context.Context)(nil)).Elem()
-var selectedType = reflect.TypeOf([]pubquery.SelectedField(nil))
+var selectedType = reflect.TypeOf(pubquery.SelectedField{})
 var errorType = reflect.TypeOf((*error)(nil)).Elem()
 
 func (b *execBuilder) makeFieldExec(typeName string, f *schema.Field, m reflect.Method, methodIndex int, methodHasReceiver bool) (*Field, error) {
@@ -284,7 +284,7 @@ func (b *execBuilder) makeFieldExec(typeName string, f *schema.Field, m reflect.
 		in = in[1:]
 	}
 
-	hasSelected := len(in) > 0 && in[0] == selectedType
+	hasSelected := len(in) > 0 && isSelectedFieldType(in[0])
 	if hasSelected {
 		in = in[1:]
 	}
@@ -318,6 +318,10 @@ func (b *execBuilder) makeFieldExec(typeName string, f *schema.Field, m reflect.
 		return nil, err
 	}
 	return fe, nil
+}
+
+func isSelectedFieldType(in reflect.Type) bool {
+	return in.Kind() == reflect.Slice && in.Elem() == selectedType
 }
 
 func findMethod(t reflect.Type, name string) int {

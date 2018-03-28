@@ -53,8 +53,8 @@ func ParseSchema(schemaString string, resolver interface{}, opts ...SchemaOpt) (
 func MustParseSchema(schemaString string, resolver interface{}, opts ...SchemaOpt) *Schema {
 	s, err := ParseSchema(schemaString, resolver, opts...)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "parse schema error: %+v\n\n", err)
-		panic(err)
+		fmt.Fprintf(os.Stderr, "%+v\n\n", err)
+		panic("parse schema failed")
 	}
 	return s
 }
