@@ -10,6 +10,7 @@ type QueryError struct {
 	Path          []interface{} `json:"path,omitempty"`
 	Rule          string        `json:"-"`
 	ResolverError error         `json:"-"`
+	PanicValue    interface{}   `json:"-"`
 }
 
 type Location struct {
