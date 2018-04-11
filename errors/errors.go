@@ -5,12 +5,13 @@ import (
 )
 
 type QueryError struct {
-	Message       string        `json:"message"`
-	Locations     []Location    `json:"locations,omitempty"`
-	Path          []interface{} `json:"path,omitempty"`
-	Rule          string        `json:"-"`
-	ResolverError error         `json:"-"`
-	PanicValue    interface{}   `json:"-"`
+	Message       string                 `json:"message"`
+	Locations     []Location             `json:"locations,omitempty"`
+	Path          []interface{}          `json:"path,omitempty"`
+	Extensions    map[string]interface{} `json:"extensions,omitempty"`
+	Rule          string                 `json:"-"`
+	ResolverError error                  `json:"-"`
+	PanicValue    interface{}            `json:"-"`
 }
 
 type Location struct {
