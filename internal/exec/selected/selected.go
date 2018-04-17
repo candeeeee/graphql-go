@@ -96,7 +96,9 @@ func applySelectionSet(r *Request, e *resolvable.Object, sels []query.Selection)
 				p := packer.ValuePacker{ValueType: reflect.TypeOf("")}
 				v, err := p.Pack(field.Arguments.MustGet("name").Value(r.Vars))
 				if err != nil {
-					r.AddError(errors.Errorf("%s", err))
+					qErr := errors.Errorf("%s", err)
+					qErr.OriginalError = err
+					r.AddError(qErr)
 					return nil
 				}
 
@@ -126,7 +128,9 @@ func applySelectionSet(r *Request, e *resolvable.Object, sels []query.Selection)
 					var err error
 					packedArgs, err = fe.ArgsPacker.Pack(args)
 					if err != nil {
-						r.AddError(errors.Errorf("%s", err))
+						qErr := errors.Errorf("%s", err)
+						qErr.OriginalError = err
+						r.AddError(qErr)
 						return
 					}
 				}

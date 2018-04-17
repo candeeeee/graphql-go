@@ -47,7 +47,9 @@ func (r *Request) Execute(ctx context.Context, s *resolvable.Schema, op *query.O
 	}()
 
 	if err := ctx.Err(); err != nil {
-		return nil, []*errors.QueryError{errors.Errorf("%s", err)}
+		qErr := errors.Errorf("%s", err)
+		qErr.OriginalError = err
+		return nil, []*errors.QueryError{qErr}
 	}
 
 	return out.Bytes(), r.Errs
@@ -210,7 +212,7 @@ func execFieldSelection(ctx context.Context, r *Request, f *fieldToExec, path *p
 			resolverErr := callOut[1].Interface().(error)
 			err := errors.Errorf("%s", resolverErr)
 			err.Path = path.toSlice()
-			err.ResolverError = resolverErr
+			err.OriginalError = resolverErr
 			return err
 		}
 		return nil

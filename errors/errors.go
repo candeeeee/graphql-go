@@ -10,7 +10,7 @@ type QueryError struct {
 	Path          []interface{}          `json:"path,omitempty"`
 	Extensions    map[string]interface{} `json:"extensions,omitempty"`
 	Rule          string                 `json:"-"`
-	ResolverError error                  `json:"-"`
+	OriginalError error                  `json:"-"`
 	PanicValue    interface{}            `json:"-"`
 }
 
