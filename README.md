@@ -9,6 +9,7 @@
 * Replace fmt.Errorf and errors.New with pkg/errors, commit [0c4918ae](https://github.com/qdentity/graphql-go/commit/0c4918aea07404c1e1e16f1ddd899f3d09bd4b29), see [graph-gophers/graphql-go#189](https://github.com/graph-gophers/graphql-go/pull/189)
 * Support wrapped type for `[]query.SelectedField` as resolver argument, commit [d95424a7](https://github.com/qdentity/graphql-go/commit/d95424a79e896f47cc5a3ea13e443f83022432a7), improves on [graph-gophers/graphql-go#169](https://github.com/graph-gophers/graphql-go/pull/169)
 * Do not print panic value in errors but store it as a transient field, commit [2e0e8590](https://github.com/qdentity/graphql-go/commit/2e0e85904d3c41460ebb5a7f63822f539ba1e77d)
+* Always store the original error, commit [8ebe5b04](https://github.com/qdentity/graphql-go/commit/8ebe5b04c8d829f3e7f368e655b3d1cff4cf36df)
 
 ## Status
 
